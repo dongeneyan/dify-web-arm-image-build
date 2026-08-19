@@ -20,17 +20,16 @@ jobs:
           ls ./dify-source  # 打印目录确认解压成功
 
       # 【核心修复】自动在 Dockerfile 中注入国内镜像源
-      - name: Fix Dockerfile Registry
+      - name: Switch pnpm to npm
         run: |
           DOCKERFILE="./dify-source/dify-1.11.4/web/Dockerfile"
           
-          # 在 pnpm install 和 pnpm add -g pm2 前面插入换源命令
-          sed -i '/^RUN.*pnpm install/i RUN pnpm config set registry https://registry.npmmirror.com' "$DOCKERFILE"
-          sed -i '/^RUN.*pnpm add -g pm2/i RUN pnpm config set registry https://registry.npmmirror.com' "$DOCKERFILE"
+          # 将 Dockerfile 中所有的 pnpm 替换为 npm
+          sed -i 's/pnpm/npm/g' "$DOCKERFILE"
 
           echo "Dockerfile patched successfully."
-          cat "$DOCKERFILE" | grep -A 2 "registry"
-
+          cat "$DOCKERFILE" | grep -E "npm"
+          
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       
