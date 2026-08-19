@@ -3,7 +3,7 @@ name: Build Dify Web ARM64 (GHCR)
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: # 允许手动点击按钮触发
+  workflow_dispatch:
 
 jobs:
   build-and-push:
@@ -13,27 +13,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 【关键步骤】自动解压你上传的 ZIP 包
+      # 1. 自动解压你上传的 ZIP 包
       - name: Unzip Source Code
         run: |
           unzip -o dify-1.11.4.zip -d ./dify-source
-          ls ./dify-source  # 打印目录确认解压成功
+          ls ./dify-source 
 
-      # 【核心修复】自动在 Dockerfile 中注入国内镜像源
-      - name: Switch pnpm to npm
+      # 2. 【核心修复】换源 + 单独处理 pm2
+      - name: Fix Dockerfile for pnpm
         run: |
           DOCKERFILE="./dify-source/dify-1.11.4/web/Dockerfile"
           
-          # 将 Dockerfile 中所有的 pnpm 替换为 npm
-          sed -i 's/pnpm/npm/g' "$DOCKERFILE"
+          # 1. 在 pnpm install 前面插入淘宝源配置
+          sed -i '/^RUN.*pnpm install/i RUN pnpm config set registry https://registry.npmmirror.com' "$DOCKERFILE"
+          
+          # 2. 【关键】将全局安装 pm2 的命令改为使用 npm 安装
+          # 这样既保留了 pnpm 管理项目依赖，又绕过了 pnpm 的全局权限拦截
+          sed -i 's/pnpm add -g pm2/npm install -g pm2/g' "$DOCKERFILE"
 
           echo "Dockerfile patched successfully."
-          cat "$DOCKERFILE" | grep -E "npm"
-          
+          cat "$DOCKERFILE" | grep -E "registry|pm2"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       
-      - name: Set up Docker Buildx
+      - name: Set up Dockerx
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GitHub Container Registry
@@ -46,7 +50,7 @@ jobs:
       - name: Build and Push ARM64 Image
         uses: docker/build-push-action@v6
         with:
-          context: ./dify-source/dify-1.11.4/web  # 指向解压后的文件夹路径
+          context: ./dify-source/dify-1.11.4/web
           platforms: linux/arm64
           push: true
           tags: |
