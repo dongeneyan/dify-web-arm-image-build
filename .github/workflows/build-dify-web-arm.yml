@@ -14,11 +14,30 @@ jobs:
         uses: actions/checkout@v4
 
       # 【关键步骤】自动解压你上传的 ZIP 包
-      # 如果你的 ZIP 包名字变了，请修改下面的 *.zip
       - name: Unzip Source Code
         run: |
           unzip -o dify-1.11.4.zip -d ./dify-source
           ls ./dify-source  # 打印目录确认解压成功
+
+      # 【核心修复】自动换源 + 增加虚拟内存（防止 Node.js 编译 OOM 崩溃）
+      - name: Fix Dockerfile & Increase Memory
+        run: |
+          # 1. 增加 8G Swap 虚拟内存，防止构建时内存溢出
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+
+          # 2. 自动把国内镜像源注入到 Dockerfile 中
+          DOCKERFILE="./dify-source/dify-1.11.4/web/Dockerfile"
+          
+          # 在 pnpm install 和 pnpm add -g pm2 前面插入换源命令
+          sed -i '/^RUN.*pnpm install/i RUN pnpm config set registry https://registry.npmmirror.com' "$DOCKERFILE"
+          sed -i '/^RUN.*pnpm add -g pm2/i RUN pnpm config set registry https://registry.npmmirror.com' "$DOCKERFILE"
+
+          echo "Dockerfile patched successfully."
+          cat "$DOCKERFILE" | grep -A 2 "registry"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
