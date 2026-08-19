@@ -36,9 +36,9 @@ jobs:
       - name: Build and Push ARM64 Image
         uses: docker/build-push-action@v5
         with:
-          context: ./dify-source/api  # ⚠️注意：这里指向解压后的文件夹路径
+          context: ./dify-source/dify-1.11.4/web  # ⚠️注意：这里指向解压后的文件夹路径
           platforms: linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/dify-api-arm64:latest
-            ghcr.io/${{ github.repository_owner }}/dify-api-arm64:1.11.4
+            ghcr.io/${{ github.repository_owner }}/dify-web-arm64:latest
+            ghcr.io/${{ github.repository_owner }}/dify-web-arm64:1.11.4
