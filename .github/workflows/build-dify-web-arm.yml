@@ -1,10 +1,8 @@
 name: Build Dify Web ARM64 (GHCR)
-
 on:
   push:
     branches: [ "main" ]
   workflow_dispatch: # 允许手动点击按钮触发
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -13,12 +11,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 【关键步骤】自动解压你上传的 ZIP 包
-      # 如果你的 ZIP 包名字变了，请修改下面的 *.zip
       - name: Unzip Source Code
         run: |
           unzip -o dify-1.11.4.zip -d ./dify-source
-          ls ./dify-source  # 打印目录确认解压成功
+          ls ./dify-source
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -30,15 +26,16 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ shturl.cc/wq }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push ARM64 Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6 # ✅ v6 消除 Node20 警告
         with:
-          context: ./dify-source/dify-1.11.4/web  # ⚠️注意：这里指向解压后的文件夹路径
+          context: ./dify-source/dify-1.11.4/web
           platforms: linux/arm64
           push: true
+          progress: plain # ✅ 输出完整构建日志，查看pnpm真实报错
           tags: |
             ghcr.io/${{ github.repository_owner }}/dify-web-arm64:latest
             ghcr.io/${{ github.repository_owner }}/dify-web-arm64:1.11.4
