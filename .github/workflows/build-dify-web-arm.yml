@@ -16,13 +16,13 @@ jobs:
       # 1. 自动解压你上传的 ZIP 包
       - name: Unzip Source Code
         run: |
-          unzip -o dify-1.11.4.zip -d ./dify-source
+          unzip -o cmgd-nismp-dify-main-develop.zip -d ./dify-source
           ls ./dify-source 
 
       # 2. 【核心修复】换源 + 单独处理 pm2
       - name: Fix Dockerfile for pnpm
         run: |
-          DOCKERFILE="./dify-source/dify-1.11.4/web/Dockerfile"
+          DOCKERFILE="./dify-source/cmgd-nismp-dify-main-develop/web/Dockerfile"
           
           # 1. 在 pnpm install 前面插入淘宝源配置
           sed -i '/^RUN.*pnpm install/i RUN pnpm config set registry https://registry.npmmirror.com' "$DOCKERFILE"
@@ -50,7 +50,7 @@ jobs:
       - name: Build and Push ARM64 Image
         uses: docker/build-push-action@v6
         with:
-          context: ./dify-source/dify-1.11.4/web
+          context: ./dify-source/cmgd-nismp-dify-main-develop/web
           platforms: linux/arm64
           push: true
           tags: |
